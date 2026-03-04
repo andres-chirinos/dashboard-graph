@@ -1,0 +1,207 @@
+---
+title: "Completitud de candidatos"
+format:
+  dashboard:
+    theme:
+      light: cosmo
+      dark: darkly
+    orientation: rows
+    scrolling-rows: auto
+execute:
+  echo: false
+  output: false
+---
+
+```{ojs}
+Plot = require("@observablehq/plot@0.6")
+
+// Fuente principal
+candidatos = FileAttachment("datos/candidatos.csv").csv()
+
+// Normalizar vacíos
+esVacio = (v) => {
+  if (v === null || v === undefined) return true
+  const t = String(v).trim().toLowerCase()
+  return t === "" || t === "nan" || t === "null" || t === "none" || t === "s/n"
+}
+
+// Campos evaluados para completitud de perfil
+campos = [
+  "ci",
+  "militancia",
+  "trayectoria",
+  "estudios",
+  "label",
+  "item",
+  "foto",
+  "youtube",
+  "facebook",
+  "instagram",
+  "tiktok",
+  "twitter",
+  "partido",
+  "territorio",
+  "cargo"
+]
+
+totalCampos = campos.length
+
+// Cálculo por candidato
+candidatosCompletitud = candidatos.map((c) => {
+  const llenos = campos.filter((k) => !esVacio(c[k])).length
+  const completitud = llenos / totalCampos
+  const camposFaltantes = campos.filter((k) => esVacio(c[k]))
+  return {
+    ...c,
+    llenos,
+    faltantes: totalCampos - llenos,
+    camposFaltantes,
+    completitud,
+    completitudPct: Math.round(completitud * 100)
+  }
+})
+
+totalCandidatos = candidatosCompletitud.length
+promedioCompletitud = totalCandidatos
+  ? candidatosCompletitud.reduce((acc, d) => acc + d.completitud, 0) / totalCandidatos
+  : 0
+
+perfilesCompletos = candidatosCompletitud.filter((d) => d.completitud === 1).length
+sinFoto = candidatosCompletitud.filter((d) => esVacio(d.foto)).length
+
+// Completitud por campo
+completitudCampos = campos.map((campo) => {
+  const llenos = candidatosCompletitud.filter((d) => !esVacio(d[campo])).length
+  return {
+    campo,
+    llenos,
+    total: totalCandidatos,
+    pct: totalCandidatos ? (llenos / totalCandidatos) * 100 : 0
+  }
+})
+
+// Promedio por tipo de candidatura
+completitudCandidatura = Array.from(
+  candidatosCompletitud.reduce((m, d) => {
+    const k = d.cargo || "(Sin dato)"
+    if (!m.has(k)) m.set(k, [])
+    m.get(k).push(d.completitud)
+    return m
+  }, new Map()),
+  ([cargo, valores]) => ({
+    cargo,
+    pct: (valores.reduce((a, b) => a + b, 0) / valores.length) * 100
+  })
+).sort((a, b) => b.pct - a.pct)
+
+// Ranking con menor completitud
+peorCompletitud = [...candidatosCompletitud]
+  .sort((a, b) => a.completitud - b.completitud)
+  .slice(0, 12)
+```
+
+# Datos
+
+## Row {height=20%}
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${totalCandidatos}</div>
+<div style="color:#6c757d">Registros evaluados</div>`
+```
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${(promedioCompletitud * 100).toFixed(1)}%</div>
+<div style="color:#6c757d">Sobre ${totalCampos} campos</div>`
+```
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${perfilesCompletos}</div>
+<div style="color:#6c757d">Con 100% de campos llenos</div>`
+```
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${sinFoto}</div>
+<div style="color:#6c757d">Campo <strong>foto</strong> vacío</div>`
+```
+
+## Row {height=50%}
+
+### Column {.tabset}
+
+```{ojs}
+//| output: true
+//| title: Completitud por campo
+Plot.plot({
+  height: 450,
+  marginLeft: 120,
+  x: {label: "Completitud (%)", domain: [0, 100]},
+  y: {label: null},
+  color: {legend: false},
+  marks: [
+    Plot.barX(completitudCampos, {
+      x: "pct",
+      y: "campo",
+      sort: {y: "x", reverse: true},
+      fill: (d) => (d.pct >= 80 ? "#198754" : d.pct >= 50 ? "#fd7e14" : "#dc3545"),
+      tip: true
+    }),
+    Plot.ruleX([0, 100])
+  ]
+})
+```
+
+
+```{ojs}
+//| output: true
+//| title: Promedio por tipo de candidatura
+
+Plot.plot({
+  height: 400,
+  marginLeft: 140,
+  x: {label: "Completitud promedio (%)", domain: [0, 100]},
+  y: {label: null},
+  marks: [
+    Plot.barX(completitudCandidatura, {
+      x: "pct",
+      y: "cargo",
+      fill: "#0d6efd",
+      sort: {y: "x", reverse: true},
+      tip: true
+    }),
+    Plot.text(completitudCandidatura, {
+      x: "pct",
+      y: "cargo",
+      text: (d) => `${d.pct.toFixed(1)}%`,
+      dx: 8,
+      textAnchor: "start",
+      fill: "#212529"
+    })
+  ]
+})
+```
+
+# Tabla
+
+```{ojs}
+//| output: true
+Inputs.table(
+  candidatosCompletitud.map((d) => ({
+    label: d.label,
+    url: d.item,
+    completitud: `${d.completitudPct}%`,
+    faltantes: d.camposFaltantes.join(", ")
+  })),
+  {
+    columns: ["label", "url", "completitud", "faltantes"],
+    sort: "completitud",
+    reverse: false,
+    format: {
+      url: (item) => html`<a href="https://graph.sociest.org/entity/${item}" target="_blank">Ver</a>`
+    }
+  }
+)
+```
