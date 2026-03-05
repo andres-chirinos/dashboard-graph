@@ -24,6 +24,8 @@ jobs:
           pip install -r datos/requirements_collect.txt
 
       - name: Run data collection script
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |
           python datos/collect.py
 
