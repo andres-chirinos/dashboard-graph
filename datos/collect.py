@@ -61,7 +61,7 @@ headers = {
     "Accept-Encoding": "gzip, deflate, br",
     "Origin": appwrite_url,
     "Referer": f"{appwrite_url}/",
-    "Cache-Control": "no-cache",
+    "Cache-Control": "no-cache",    
     "Pragma": "no-cache",
     "DNT": "1",
     "Sec-Fetch-Dest": "empty",
@@ -132,7 +132,8 @@ for i in range(max_iterations):
         if response:
             print(f"Status: {response.status_code}")
             print(f"Response: {response.text[:500]}")
-        break
+        raise Exception()
+        #break
 
     response_data = response.json()
     results = response_data.get("results", {}).get("bindings", [])

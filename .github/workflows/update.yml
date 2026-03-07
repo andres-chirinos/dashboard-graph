@@ -29,6 +29,7 @@ jobs:
           APPWRITE_URL: https://appwrite.sociest.org
           CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: python datos/collect.py
+        continue-on-error: false
 
       - name: Configure Git
         run: |
