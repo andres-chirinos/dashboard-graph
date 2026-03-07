@@ -1,1 +1,1 @@
-Sitemap: https://andres-chirinos.github.io/dashboard-graph/sitemap.xml
+Sitemap: https://sociest.github.io/dashboard-graph/sitemap.xml
