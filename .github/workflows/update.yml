@@ -1,8 +1,8 @@
-name: Update Candidates
+name: Update Dashboard
 
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 */3 * * *"
   workflow_dispatch:
 
 jobs:
