@@ -98,6 +98,15 @@ def fetch_page(current_offset, current_limit, max_retries=3):
                 print("Success!")
                 return response, None
 
+            if (
+                response.status_code == 500
+                and "'NoneType' object is not iterable" in response.text
+            ):
+                print(
+                    "Fatal 500 detected ('NoneType' object is not iterable). Stopping extraction and saving partial data..."
+                )
+                return response, "fatal_none_iterable"
+
             if response.status_code == 403:
                 print(f"403 Forbidden - {list(response.headers.keys())} {response.text}")
             else:
@@ -116,12 +125,17 @@ def fetch_page(current_offset, current_limit, max_retries=3):
 
 
 iterations = 0
+stop_extraction = False
 while iterations < max_iterations:
     iterations += 1
     page_limit = initial_limit
 
     while True:
         response, error = fetch_page(offset, page_limit)
+
+        if error == "fatal_none_iterable":
+            stop_extraction = True
+            break
 
         if error is None and response is not None:
             response_data = response.json()
@@ -152,11 +166,14 @@ while iterations < max_iterations:
         offset += 1
         break
 
+    if stop_extraction:
+        break
+
 print(f"\nTotal candidates collected: {len(all_data)}")
 
 if all_data:
     all_data_df = pd.DataFrame(all_data)
-    all_data_df.to_csv("datos/candidatos.csv", index=False)
-    print("Data saved to datos/candidatos.csv")
+    all_data_df.to_csv("datos/partidos.csv", index=False)
+    print("Data saved to datos/partidos.csv")
 else:
     print("No data collected. Check authentication and permissions.")
