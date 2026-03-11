@@ -138,7 +138,26 @@ while iterations < max_iterations:
             break
 
         if error is None and response is not None:
-            response_data = response.json()
+            try:
+                response_data = response.json()
+            except ValueError:
+                print(
+                    f"Invalid JSON response at offset {offset} with limit={page_limit}."
+                )
+                print(f"Status: {response.status_code}")
+                print(f"Response: {response.text[:500]}")
+
+                if page_limit > 1:
+                    page_limit = max(1, page_limit // 2)
+                    print(
+                        f"Reducing page size and retrying with limit={page_limit}..."
+                    )
+                    continue
+
+                print(f"Skipping problematic record at offset {offset}")
+                offset += 1
+                break
+
             results = response_data.get("results", {}).get("bindings", [])
 
             if not results:
@@ -173,7 +192,7 @@ print(f"\nTotal candidates collected: {len(all_data)}")
 
 if all_data:
     all_data_df = pd.DataFrame(all_data)
-    all_data_df.to_csv("datos/partidos.csv", index=False)
-    print("Data saved to datos/partidos.csv")
+    all_data_df.to_csv("datos/encuestas.csv", index=False)
+    print("Data saved to datos/encuestas.csv")
 else:
     print("No data collected. Check authentication and permissions.")
