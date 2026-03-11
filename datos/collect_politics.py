@@ -3,35 +3,21 @@ import pandas as pd
 import time
 import os
 
-query = """SELECT ?item ?label ?ci ?cargo ?militancia ?trayectoria ?estudios ?foto ?youtube ?facebook ?instagram ?tiktok ?twitter ?partido ?territorio
-WHERE { 
-  ?item claim:69857da6142c6cf1636b ?stmt1 .
-  OPTIONAL {
-    ?item claim:69839e7ca5dfc05c1847 ?stmt2 .
-    ?stmt2 value: ?ci .
-    ?item claim:69909ff678ca509e132b ?stmt3 .
-    ?stmt3 value: ?militancia .
-    ?item claim:6991e1f71d9b946eed02 ?stmt4 .
-    ?stmt4 value: ?trayectoria .
-    ?item claim:698a960962e87e866083 ?stmt5 .
-    ?stmt5 value: ?estudios .
-    ?item claim:698d2b149e3a7aa9ca9d ?stmt6 .
-    ?stmt6 value: ?foto .
-    ?item claim:698ff396819084d3f34f ?stmt7 .
-    ?stmt7 value: ?youtube .
-    ?item claim:698a9704d5423dd2a594 ?stmt8 .
-    ?stmt8 value: ?facebook .
-    ?item claim:6990ac7d411c99d182eb ?stmt9 .
-    ?stmt9 value: ?instagram .
-    ?item claim:698d2ea93ec1314cd130 ?stmt10 .
-    ?stmt10 value: ?tiktok .
-    ?item claim:6990acbb7e77c6674b88 ?stmt11 .
-    ?stmt11 value: ?twitter .
-    ?item claim:69857da6142c6cf1636b ?stmt12 .
-    ?stmt12 value: ?cargo .
-    ?stmt12 qual:6985697dce1378ac55e9 ?partido .
-    ?stmt12 qual:6982cd215f22d1c5d613 ?territorio .
-  }
+query = """SELECT ?item ?label ?logo ?sigla ?sede ?presidente ?militantes ?fundador ?fundacion ?ideologia ?descripcion ?colores ?tipo
+WHERE {
+  OPTIONAL { ?item claim:6985e79eafa03f6c8186 ?ret_stmt3 . ?ret_stmt3 value: ?logo . }
+  OPTIONAL { ?item claim:69912af042192aa886da ?ret_stmt4 . ?ret_stmt4 value: ?sigla . }
+  OPTIONAL { ?item claim:699631a380986c7458fa ?ret_stmt5 . ?ret_stmt5 value: ?sede . }
+  OPTIONAL { ?item claim:6991dc50c8c1754deb3b ?ret_stmt6 . ?ret_stmt6 value: ?presidente . }
+  OPTIONAL { ?item claim:69935ad42b7b4f5f6022 ?ret_stmt7 . ?ret_stmt7 value: ?militantes . }
+  OPTIONAL { ?item claim:6991dc2eabb96fde2475 ?ret_stmt8 . ?ret_stmt8 value: ?fundador . }
+  OPTIONAL { ?item claim:69932d145f0576125f96 ?ret_stmt9 . ?ret_stmt9 value: ?fundacion . }
+  OPTIONAL { ?item claim:699359f4c98d1096a2d6 ?ret_stmt10 . ?ret_stmt10 value: ?ideologia . }
+  OPTIONAL { ?item claim:69932bedd9f3e515b846 ?ret_stmt11 . ?ret_stmt11 value: ?descripcion . }
+  OPTIONAL { ?item claim:69860e969885b01c0bb4 ?ret_stmt12 . ?ret_stmt12 value: ?colores . }
+  OPTIONAL { ?item claim:69935d76d5af6efd12ea ?ret_stmt13 . ?ret_stmt13 value: ?tipo . }
+  ?item claim:69814ee90009513e4f69 ?stmt0 .
+  ?stmt0 value: "6985697dce1378ac55e9" .
 }
 LIMIT {{LIMIT}}
 OFFSET {{OFFSET}}"""
@@ -46,8 +32,8 @@ cloudflare_token = os.getenv("CLOUDFLARE_TOKEN", "")
 
 # Fetch all candidates with pagination
 offset = 0
-limit = 100
-max_iterations = 80
+limit = 200
+max_iterations = 10
 
 all_data = []
 
@@ -151,7 +137,7 @@ print(f"\nTotal candidates collected: {len(all_data)}")
 
 if all_data:
     all_data_df = pd.DataFrame(all_data)
-    all_data_df.to_csv("datos/candidatos.csv", index=False)
-    print("Data saved to datos/candidatos.csv")
+    all_data_df.to_csv("datos/partidos.csv", index=False)
+    print("Data saved to datos/partidos.csv")
 else:
     print("No data collected. Check authentication and permissions.")

@@ -1,0 +1,244 @@
+---
+title: "Completitud de partidos"
+format:
+  dashboard:
+    theme:
+      light: cosmo
+      dark: darkly
+    orientation: rows
+    scrolling-rows: auto
+execute:
+  echo: false
+  output: false
+---
+
+```{ojs}
+Plot = require("@observablehq/plot@0.6")
+```
+
+```{ojs}
+// Fuente principal
+partidos = FileAttachment("datos/partidos.csv").csv()
+
+// Normalizar vacíos
+esVacio = (v) => {
+  if (v === null || v === undefined) return true
+  const t = String(v).trim().toLowerCase()
+  return t === "" || t === "nan" || t === "null" || t === "none" || t === "s/n"
+}
+
+// Campos evaluados para completitud de perfil
+campos = [
+  "logo",
+  "sigla",
+  "presidente",
+  "militantes",
+  "ideologia",
+  "descripcion",
+  "colores",
+  "label",
+  "item",
+  "sede",
+  "fundador",
+  "fundacion"
+]
+
+totalCampos = campos.length
+
+// Cálculo por partido
+partidosCompletitud = partidos.map((p) => {
+  const llenos = campos.filter((k) => !esVacio(p[k])).length
+  const faltantes = totalCampos - llenos
+  const completitud = llenos / totalCampos
+  const camposFaltantes = campos.filter((k) => esVacio(p[k]))
+  const ideologiaNombre = p.ideologia || "(Sin dato)"
+  const tipoNombre = p.tipo || "(Sin dato)"
+  const siglaNombre = p.sigla || "(Sin dato)"
+  const puntajeImportancia = faltantes
+  return {
+    ...p,
+    llenos,
+    faltantes,
+    camposFaltantes,
+    ideologiaNombre,
+    tipoNombre,
+    siglaNombre,
+    puntajeImportancia,
+    completitud,
+    completitudPct: Math.round(completitud * 100)
+  }
+})
+
+totalPartidos = partidosCompletitud.length
+promedioCompletitud = totalPartidos
+  ? partidosCompletitud.reduce((acc, d) => acc + d.completitud, 0) / totalPartidos
+  : 0
+
+perfilesCompletos = partidosCompletitud.filter((d) => d.completitud === 1).length
+sinLogo = partidosCompletitud.filter((d) => esVacio(d.logo)).length
+
+// Completitud por campo
+completitudCampos = campos.map((campo) => {
+  const llenos = partidosCompletitud.filter((d) => !esVacio(d[campo])).length
+  return {
+    campo,
+    llenos,
+    total: totalPartidos,
+    pct: totalPartidos ? (llenos / totalPartidos) * 100 : 0
+  }
+})
+
+// Promedio por ideología
+completitudIdeologia = Array.from(
+  partidosCompletitud.reduce((m, d) => {
+    const k = d.tipoNombre
+    if (!m.has(k)) m.set(k, [])
+    m.get(k).push(d.completitud)
+    return m
+  }, new Map()),
+  ([ideologia, valores]) => ({
+    ideologia,
+    pct: (valores.reduce((a, b) => a + b, 0) / valores.length) * 100
+  })
+).sort((a, b) => b.pct - a.pct)
+
+// Ranking con menor completitud
+peorCompletitud = [...partidosCompletitud]
+  .sort((a, b) => b.puntajeImportancia - a.puntajeImportancia)
+  .slice(0, 12)
+
+siglasDisponibles = ["(Todos)", ...new Set(partidosCompletitud.map((d) => d.siglaNombre))]
+ideologiasDisponibles = ["(Todos)", ...new Set(partidosCompletitud.map((d) => d.tipoNombre))]
+```
+
+# Resumen
+
+## Row {height=20%}
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${totalPartidos}</div>
+<div style="color:#6c757d">Registros evaluados</div>`
+```
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${(promedioCompletitud * 100).toFixed(1)}%</div>
+<div style="color:#6c757d">Sobre ${totalCampos} campos</div>`
+```
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${perfilesCompletos}</div>
+<div style="color:#6c757d">Con 100% de campos llenos</div>`
+```
+
+```{ojs}
+//| output: true
+html`<div style="font-size:2rem;font-weight:700">${sinLogo}</div>
+<div style="color:#6c757d">Campo <strong>logo</strong> vacío</div>`
+```
+
+## Row {height=80%}
+
+```{ojs}
+//| output: true
+//| title: Completitud por campo
+Plot.plot({
+  height: 450,
+  marginLeft: 120,
+  x: {label: "Completitud (%)", domain: [0, 100]},
+  y: {label: null},
+  color: {legend: false},
+  marks: [
+    Plot.barX(completitudCampos, {
+      x: "pct",
+      y: "campo",
+      sort: {y: "x", reverse: true},
+      fill: (d) => (d.pct >= 80 ? "#198754" : d.pct >= 50 ? "#fd7e14" : "#dc3545"),
+      tip: true
+    }),
+    Plot.ruleX([0, 100])
+  ]
+})
+```
+
+```{ojs}
+//| output: true
+//| title: Promedio por ideología
+Plot.plot({
+  height: 400,
+  marginLeft: 140,
+  x: {label: "Completitud promedio (%)", domain: [0, 100]},
+  y: {label: null},
+  marks: [
+    Plot.barX(completitudIdeologia, {
+      x: "pct",
+      y: "ideologia",
+      fill: "#0d6efd",
+      sort: {y: "x", reverse: true},
+      tip: true
+    }),
+    Plot.text(completitudIdeologia, {
+      x: "pct",
+      y: "ideologia",
+      text: (d) => `${d.pct.toFixed(1)}%`,
+      dx: 8,
+      textAnchor: "start",
+      fill: "#212529"
+    })
+  ]
+})
+```
+
+# Tabla  
+
+## Row {height=20%}
+
+```{ojs}
+//| output: true
+viewof filtrosTabla = Inputs.form({
+  sigla: Inputs.select(siglasDisponibles, {label: "Sigla", value: "(Todos)"}),
+  ideologia: Inputs.select(ideologiasDisponibles, {label: "Ideología", value: "(Todos)"}),
+  nombre: Inputs.text({label: "Buscar partido", placeholder: "Escribe un nombre"})
+})
+```
+
+```{ojs}
+//| output: false
+textoFiltro = (filtrosTabla.nombre || "").trim().toLowerCase()
+
+partidosFiltrados = partidosCompletitud.filter((d) => {
+  const matchSigla = filtrosTabla.sigla === "(Todos)" || d.siglaNombre === filtrosTabla.sigla
+  const matchIdeologia = filtrosTabla.ideologia === "(Todos)" || d.ideologiaNombre === filtrosTabla.ideologia
+  const matchNombre = !textoFiltro || (d.label || "").toLowerCase().includes(textoFiltro)
+  return matchSigla && matchIdeologia && matchNombre
+})
+```
+
+## Row {height=80%}  
+
+```{ojs}
+//| output: true
+Inputs.table(
+  partidosFiltrados.map((d) => ({
+    label: d.label,
+    url: d.item,
+    sigla: d.sigla,
+    presidente: d.presidente,
+    ideologia: d.ideologia,
+    puntosFaltantes: d.faltantes,
+    puntajeImportancia: d.puntajeImportancia,
+    completitud: `${d.completitudPct}%`,
+    faltantes: d.camposFaltantes.join(", ")
+  })),
+  {
+    columns: ["label", "url", "sigla", "presidente", "ideologia", "puntosFaltantes", "puntajeImportancia", "completitud", "faltantes"],
+    sort: "puntajeImportancia",
+    reverse: true,
+    format: {
+      url: (item) => html`<a href="https://graph.sociest.org/entity/${item}" target="_blank">Ver</a>`
+    }
+  }
+)
+```

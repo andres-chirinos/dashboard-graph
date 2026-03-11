@@ -1,6 +1,6 @@
 on:
   workflow_run:
-    workflows: ["Update Candidates"]
+    workflows: ["Update Dashboard"]
     types:
       - completed
   workflow_dispatch:
