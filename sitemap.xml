@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://sociest.github.io/elecciones-dashboard/ranking.html</loc>
+    <lastmod>2026-06-11T15:36:23.342Z</lastmod>
+  </url>
+  <url>
     <loc>https://sociest.github.io/elecciones-dashboard/index.html</loc>
-    <lastmod>2026-06-11T10:01:42.239Z</lastmod>
+    <lastmod>2026-06-11T15:36:23.342Z</lastmod>
   </url>
   <url>
     <loc>https://sociest.github.io/elecciones-dashboard/surveys.html</loc>
-    <lastmod>2026-06-11T10:01:42.240Z</lastmod>
+    <lastmod>2026-06-11T15:36:23.342Z</lastmod>
   </url>
   <url>
     <loc>https://sociest.github.io/elecciones-dashboard/partidos.html</loc>
-    <lastmod>2026-06-11T10:01:42.239Z</lastmod>
-  </url>
-  <url>
-    <loc>https://sociest.github.io/elecciones-dashboard/ranking.html</loc>
-    <lastmod>2026-06-11T10:01:42.239Z</lastmod>
+    <lastmod>2026-06-11T15:36:23.342Z</lastmod>
   </url>
 </urlset>
